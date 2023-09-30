@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+
+<form id="cadastro-form" method="POST" action="/criar-conta">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Nova conta</h5>
+                        <form id="login-form">
+                            <input type="hidden" value="{{ cpf }}">
+                            <div class="mb-3">
+                                <label for="tipo-conta" class="form-label">Tipo de Conta</label>
+                                <select class="form-select" aria-label="Selecione" id="tipo-conta" name="tipoConta">
+                                    <option selected>Selecione</option>
+                                    <option value="1">Corrente</option>
+                                    <option value="2">Poupança</option>
+                                    <option value="3">Investimento</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <span id="erro" class="text-danger">{{ erro }}</span>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button id="botao-criar-conta" type="submit" class="btn btn-primary">Abrir</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% endblock %}

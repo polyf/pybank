@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+    <form id="cadastro-form" method="POST" action="/criar-cliente">
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Cadastro</h5>
+                            <form id="login-form">
+                                <div class="mb-3">
+                                    <label for="nome" class="form-label">Nome</label>
+                                    <input type="text" class="form-control" id="nome" name="nome" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="cpf" class="form-label">CPF</label>
+                                    <input type="text" class="form-control" id="cpf" name="cpf" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="sexo" class="form-label">Sexo</label>
+                                    <select class="form-select" aria-label="Selecione" id="sexo" name="sexo">
+                                        <option selected>Selecione</option>
+                                        <option value="Feminino">Feminino</option>
+                                        <option value="Masculino">Masculino</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="data-nascimento" class="form-label">Data de Nascimento</label>
+                                    <input type="date" class="form-control" id="data-nascimento" name="dataNascimento">
+                                </div>
+                                <div class="mb-3">
+                                    <span id="erro" class="text-danger">{{ erro }}</span>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button id="botao-cadastro" type="submit" class="btn btn-primary">Cadastrar</button>
+                                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Já tenho cadastro</a>
+                                </div>
+                            </form>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+    
