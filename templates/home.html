@@ -6,23 +6,26 @@
 <div class="container p-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <form>
                 <div class="card text-center">
                     <div class="card-header">
                     Acesse sua conta
                     </div>
                     <div class="card-body">
                         {% if tipo %}
-                            <h5 class="card-title">Conta {{ tipo }}</h5>
-                            <p class="card-text">Saldo: R$ {{ saldo }}</p>
-                            <a href="#" class="btn btn-primary">Acessar</a>
+                            <form>
+                                <input type="hidden" name="cpf" value="{{ cpf }}">
+                                <h5 class="card-title">Conta {{ tipo }}</h5>
+                                <p class="card-text">Saldo: R$ {{ saldo }}</p>
+                                <a href="{{ url_for('conta', cpf=cpf) }}" class="btn btn-primary">Acessar</a>
+                            </form>
                         {% else %}
-                            <button id="botao-cadastro" type="submit" class="btn btn-primary">Abrir conta</button>
+                            <form method="POST" action="{{ url_for('novaConta') }}">
+                                <input type="hidden" name="cpf" value="{{ cpf }}">
+                                <button type="submit" class="btn btn-primary">Abrir conta</button>
+                            </form>
                         {% endif %}
                     </div>
                 </div>
-                <input type="hidden" value="{{ cpf }}">
-            </form>
         </div>
     </div>
 </div>

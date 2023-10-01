@@ -274,7 +274,7 @@ def login():
             return render_template('home.html', cpf=cpf_cliente, saldo=saldo_conta, tipo=tipo_conta)
         else:
             # Cliente não possui uma conta, renderiza o HTML sem dados da conta
-            return render_template('home.html')
+            return render_template('home.html', cpf=cpf)
     else:
         # Cliente não existe, envia mensagem de erro
         return render_template('index.html', erro="Cliente não encontrado, por favor, verifique seus dados.")
@@ -284,7 +284,7 @@ def cadastro():
     return render_template('cadastro.html')
 
 @app.route('/criar-cliente', methods=['POST'])
-def criarConta():
+def criarCliente():
     nome = request.form['nome']
     cpf = request.form['cpf']
     data_nascimento = request.form['dataNascimento']  # Corrigido para 'dataNascimento'
@@ -308,7 +308,39 @@ def criarConta():
         except Exception as e:
             db.session.rollback()
             return render_template('cadastro.html', erro="Erro ao cadastrar cliente.")
-# Implemente os demais endpoints de acordo com as especificações
+
+@app.route('/nova-conta', methods=['POST'])
+def novaConta():
+    cpf = request.form['cpf']
+    return render_template('nova-conta.html', cpf=cpf)
+
+@app.route('/criar-conta', methods=['POST'])
+def criarConta():
+    cpf = request.form['cpf']
+    cliente = Cliente.query.filter_by(cpf=cpf).first()
+    id_cliente = cliente.id
+    tipo_conta = request.form['tipoConta']
+    saldo_inicial = 0.0
+
+    nova_conta = ContaBancaria(cliente_id=id_cliente, tipo_conta_id=int(tipo_conta), saldo_inicial=saldo_inicial)
+
+    try:
+        db.session.add(nova_conta)
+        db.session.commit()
+        tipo_conta = TipoConta.query.get(int(tipo_conta)).tipo
+        return render_template('home.html', cpf=cpf, saldo=saldo_inicial, tipo=tipo_conta)
+    except Exception as e:
+            db.session.rollback()
+            return render_template('home.html', erro="Erro ao cadastrar conta.")
+    
+@app.route('/conta', methods=['GET'])
+def conta():
+    cpf = request.args.get('cpf')
+    cliente = Cliente.query.filter_by(cpf=cpf).first()
+    transacoes = cliente.conta.movimentacoes
+
+    print(cliente.conta.tipo_conta_id)
+    return render_template('conta.html', conta=cliente.conta.id, transacoes=transacoes, tipo_conta = cliente.conta.tipo_conta_id)
 
 if __name__ == '__main__':
     with app.app_context():
