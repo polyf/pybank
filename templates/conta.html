@@ -26,6 +26,8 @@
                     Depósito
                 {% elif transacao.tipo == 2 %}
                     Saque
+                {% elif transacao.tipo == 3 %}
+                    Juros
                 {% endif %}
               </td>
               <td>{{ transacao.data.strftime('%d/%m/%Y %H:%M:%S') }}</td>
@@ -33,9 +35,15 @@
             {% endfor %}
           </tbody>
     </table>
-    {% if tipo_conta != 3 %}
-        <button class="btn btn-primary">Saque</button>
-    {% endif %}                                                                                              
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        {% if tipo_conta != 3 %}
+            <a href="{{ url_for('sacar', conta=conta) }}" class="btn btn-primary">Saque</a>
+        {% endif %}
+        <a href="{{ url_for('depositar', conta=conta) }}" class="btn btn-primary">Depósito</a>
+        <a href="{{ url_for('juros', conta=conta) }}" class="btn btn-warning">Juros</a>    
+        <a href="{{ url_for('relatorio', conta=conta) }}" class="btn btn-warning">Relatório</a>        
+    </div>
+                                                                                              
 </div>
 
 {% endblock %}

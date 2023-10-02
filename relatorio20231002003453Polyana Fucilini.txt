@@ -1,0 +1,24 @@
+Relatório de Movimentações
+
+Dados do Cliente:
+Nome do Cliente: Polyana Fucilini
+CPF: 03227827085
+
+Dados da Conta Bancária:
+Tipo de Conta: Conta Poupança
+Número da Conta: 2
+
+Informações do Relatório:
+Data Inicial: 2023-10-01
+Data Final: 2023-10-10
+
+Listagem das Movimentações:
+1. Data: 2023-10-01 16:25:31.875085, Tipo: 1, Valor: R$ 100.0
+2. Data: 2023-10-01 16:25:31.875085, Tipo: 1, Valor: R$ 100.0
+3. Data: 2023-10-01 16:25:31.875085, Tipo: 1, Valor: R$ 100.0
+4. Data: 2023-10-01 17:24:50.867754, Tipo: 2, Valor: R$ 100.0
+5. Data: 2023-10-01 17:29:03.794000, Tipo: 2, Valor: R$ 100.0
+6. Data: 2023-10-01 17:33:34.919135, Tipo: 2, Valor: R$ 50.0
+7. Data: 2023-10-01 17:33:34.919135, Tipo: 2, Valor: R$ 20.0
+8. Data: 2023-10-01 23:00:38.310225, Tipo: 1, Valor: R$ 100.0
+9. Data: 2023-10-01 23:00:38.310225, Tipo: 2, Valor: R$ 40.0

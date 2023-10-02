@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Nova conta</h5>
+                    <form id="juros-form" method="POST" action="/aplicar-juros">
+                        <input type="hidden" value="{{ conta }}" name="conta">
+                        <div class="mb-3">
+                            <label for="taxa" class="form-label">Taxa</label>
+                            <input type="number" class="form-control" id="taxa" name="taxa" required>
+                        </div>
+                        <div class="mb-3">
+                            <span id="erro" class="text-danger">{{ erro }}</span>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Aplicar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

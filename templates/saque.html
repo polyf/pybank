@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Nova conta</h5>
+                    <form id="saque-form" method="POST" action="/realizar-saque">
+                        <input type="hidden" value="{{ conta }}" name="conta">
+                        <div class="mb-3">
+                            <label for="valor" class="form-label">Valor</label>
+                            <input type="number" class="form-control" id="valor" name="valor" required>
+                        </div>
+                        <div class="mb-3">
+                            <span id="erro" class="text-danger">{{ erro }}</span>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Sacar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

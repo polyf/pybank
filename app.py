@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, send_file
 from flask_cors import CORS
 
 from flask import Flask, render_template
@@ -155,31 +155,6 @@ def abrir_conta():
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": "Erro ao criar conta.", "error": str(e)}), 500
-
-# Realiza um deposito
-@app.route('/deposito/<int:conta_id>', methods=['POST'])
-def realizar_deposito(conta_id):
-    data = request.get_json()
-    valor = float(data['valor'])
-
-    conta = ContaBancaria.query.get(conta_id)
-
-    if not conta:
-        return jsonify({"message": "Conta não encontrada."}), 404
-
-    if valor <= 0:
-        return jsonify({"message": "O valor do depósito deve ser maior que zero."}), 400
-
-    movimentacao = Movimentacao(tipo=1, conta=conta, valor=valor)
-
-    try:
-        conta.saldo_inicial += valor
-        db.session.add(movimentacao)
-        db.session.commit()
-        return jsonify({"message": "Depósito realizado com sucesso!", "novo_saldo": conta.saldo_inicial}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"message": "Erro ao realizar depósito.", "error": str(e)}), 500
 
 # Adiciona um tipo de conta
 @app.route('/tipos-conta', methods=['POST'])
@@ -338,9 +313,195 @@ def conta():
     cpf = request.args.get('cpf')
     cliente = Cliente.query.filter_by(cpf=cpf).first()
     transacoes = cliente.conta.movimentacoes
-
-    print(cliente.conta.tipo_conta_id)
     return render_template('conta.html', conta=cliente.conta.id, transacoes=transacoes, tipo_conta = cliente.conta.tipo_conta_id)
+
+@app.route('/saque')
+def sacar():
+    conta = request.args.get('conta')
+    return render_template('saque.html', conta=conta)
+
+@app.route('/deposito')
+def depositar():
+    conta = request.args.get('conta')
+    return render_template('deposito.html', conta=conta)
+
+@app.route('/juros')
+def juros():
+    conta = request.args.get('conta')
+    return render_template('juros.html', conta=conta)
+
+@app.route('/relatorio')
+def relatorio():
+    conta = request.args.get('conta')
+    return render_template('relatorio.html', conta=conta)
+
+@app.route('/realizar-saque', methods=['POST'])
+def realizar_saque():
+    conta = request.form['conta']
+    valor = float(request.form['valor'])
+
+    # Verifica se o valor do saque é válido (maior que zero)
+    if valor <= 0:
+        return render_template('saque.html', erro="O valor do saque deve ser maior que zero.")
+
+    # Verifique se a conta existe (substitua 'ContaBancaria' pelo nome correto da sua classe de conta)
+    conta_bancaria = ContaBancaria.query.get(conta)
+    
+    if not conta_bancaria:
+        return render_template('saque.html', erro="Conta não encontrada.")
+    
+    # Verifique se o saldo é suficiente para o saque
+    if conta_bancaria.saldo_inicial < valor:
+        return render_template('saque.html', erro="Saldo insuficiente.", conta=conta_bancaria.id)
+
+    # Crie uma nova movimentação de saque
+    movimentacao = Movimentacao(tipo=2, conta=conta_bancaria, valor=valor)
+
+    try:
+        # Atualize o saldo da conta após o saque
+        conta_bancaria.saldo_inicial -= valor
+        
+        # Salve a movimentação e o saldo atualizado no banco de dados
+        db.session.add(movimentacao)
+        db.session.commit()
+
+        return render_template('home.html', sucesso="Operação realizada com sucesso!", cpf=conta_bancaria.cliente.cpf, saldo=conta_bancaria.saldo_inicial, tipo=conta_bancaria.tipo_conta.tipo)
+    except Exception as e:
+        db.session.rollback()
+        return render_template('saque.html', erro="Erro ao realizar saque.")
+
+@app.route('/realizar-deposito', methods=['POST'])
+def realizar_deposito():
+    conta = request.form['conta']
+    valor = float(request.form['valor'])
+
+    # Verifica se o valor do depósito é válido (maior que zero)
+    if valor <= 0:
+        erro = "O valor do depósito deve ser maior que zero."
+        return render_template('deposito.html', erro=erro, conta=conta)
+
+    # Verifique se a conta existe (substitua 'ContaBancaria' pelo nome correto da sua classe de conta)
+    conta_bancaria = ContaBancaria.query.get(conta)
+    
+    if not conta_bancaria:
+        erro = "Conta não encontrada."
+        return render_template('deposito.html', erro=erro, conta=conta)
+
+    # Crie uma nova movimentação de depósito
+    movimentacao = Movimentacao(tipo=1, conta=conta_bancaria, valor=valor)
+
+    try:
+        # Atualize o saldo da conta após o depósito
+        conta_bancaria.saldo_inicial += valor
+        
+        # Salve a movimentação e o saldo atualizado no banco de dados
+        db.session.add(movimentacao)
+        db.session.commit()
+
+        # Redirecione para a página de sucesso ou outra página após o depósito
+        return render_template('home.html', sucesso="Operação realizada com sucesso!", cpf=conta_bancaria.cliente.cpf, saldo=conta_bancaria.saldo_inicial, tipo=conta_bancaria.tipo_conta.tipo)
+    except Exception as e:
+        db.session.rollback()
+        erro = "Erro ao realizar depósito. Detalhes: " + str(e)
+        return render_template('saque.html', erro="Erro ao realizar depósito.")
+
+# Rota para realizar a aplicação de juros
+@app.route('/aplicar-juros', methods=['POST'])
+def realizar_aplicacao_juros():
+    conta = request.form['conta']
+    taxa_juros = float(request.form['taxa'])
+
+    # Verifique se a taxa de juros é válida (maior que zero)
+    if taxa_juros <= 0:
+        erro = "A taxa de juros deve ser maior que zero."
+        return render_template('juros.html', erro=erro, conta=conta)
+
+    # Verifique se a conta existe (substitua 'ContaBancaria' pelo nome correto da sua classe de conta)
+    conta_bancaria = ContaBancaria.query.get(conta)
+    
+    if not conta_bancaria:
+        erro = "Conta não encontrada."
+        return render_template('juros.html', erro=erro, conta=conta)
+
+    # Verifique se o tipo de conta é poupança ou investimento (substitua 'TipoConta' pelo nome correto da sua classe de tipo de conta)
+    if conta_bancaria.tipo_conta_id not in [2, 3]:
+        erro = "A operação de aplicação de juros está disponível apenas para contas de poupança e investimento."
+        return render_template('juros.html', erro=erro, conta=conta)
+
+    # Crie uma nova movimentação de aplicação de juros (tipo 3)
+    movimentacao = Movimentacao(tipo=3, conta=conta_bancaria, valor=0)  # Valor zero, pois a movimentação representa apenas a aplicação de juros
+
+    try:
+        # Calcule o valor dos juros com base na taxa e no saldo atual da conta
+        valor_juros = conta_bancaria.saldo_inicial * (taxa_juros / 100)
+        
+        # Atualize o saldo da conta após a aplicação de juros
+        conta_bancaria.saldo_inicial += valor_juros
+        
+        # Atualize o valor da movimentação com o valor dos juros
+        movimentacao.valor = valor_juros
+        
+        # Salve a movimentação e o saldo atualizado no banco de dados
+        db.session.add(movimentacao)
+        db.session.commit()
+
+        # Redirecione para a página de sucesso ou outra página após a aplicação de juros
+        return render_template('home.html', sucesso="Operação realizada com sucesso!", cpf=conta_bancaria.cliente.cpf, saldo=conta_bancaria.saldo_inicial, tipo=conta_bancaria.tipo_conta.tipo)
+    except Exception as e:
+        db.session.rollback()
+        erro = "Erro ao aplicar juros. Detalhes: " + str(e)
+        return render_template('juros.html', erro=erro, conta=conta)
+    
+@app.route('/gerar_relatorio', methods=['POST'])
+def gerar_relatorio():
+    conta = request.form['conta']
+    data_inicio = request.form['dataInicio']
+    data_fim = request.form['dataFim']
+    conta_bancaria = ContaBancaria.query.filter_by(id=conta).first()
+
+    cliente = Cliente.query.get(conta_bancaria.cliente_id)
+
+
+    # Cabecalho do relatório
+    relatorio = f"Relatório de Movimentações\n\n"
+    relatorio += f"Dados do Cliente:\n"
+    relatorio += f"Nome do Cliente: {cliente.nome}\n"
+    relatorio += f"CPF: {cliente.cpf}\n\n"
+    
+    if (conta_bancaria.tipo_conta_id == 1):
+        conta_bancaria_tipo = "Conta Corrente"
+    elif (conta_bancaria.tipo_conta_id == 2):
+        conta_bancaria_tipo = "Conta Poupança"
+    elif (conta_bancaria.tipo_conta_id == 3):
+        conta_bancaria_tipo = "Conta Investimento"
+    else:
+        conta_bancaria_tipo = "Desconhecida"
+
+    relatorio += f"Dados da Conta Bancária:\n"
+    relatorio += f"Tipo de Conta: {conta_bancaria_tipo}\n"
+    relatorio += f"Número da Conta: {conta_bancaria.id}\n\n"
+
+
+    relatorio += f"Informações do Relatório:\n"
+    relatorio += f"Data Inicial: {data_inicio}\n"
+    relatorio += f"Data Final: {data_fim}\n\n"
+    
+    # Movimentacoes do relatorio
+
+    relatorio += f"Listagem das Movimentações:\n"
+    contador = 1
+    for item in conta_bancaria.movimentacoes:
+        data_formatada = item.data.strftime("%m/%d/%Y %H:%M:%S %f")[:-3]  # Formata a data
+        relatorio += f"{contador}. Data: {data_formatada}, Tipo: {item.tipo}, Valor: R$ {item.valor}\n"
+        contador += 1
+    
+    # Nome do arquivo de texto de saída
+    nome_arquivo = "relatorio" + str(datetime.now().strftime("%Y%m%d%H%M%S")) + cliente.nome + ".txt"
+    with open(nome_arquivo, "w") as arquivo:
+        arquivo.write(relatorio)
+
+    return send_file(nome_arquivo, as_attachment=True, download_name=nome_arquivo)
+
 
 if __name__ == '__main__':
     with app.app_context():
