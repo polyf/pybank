@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from flask import Flask, render_template, request, send_file
 from flask_cors import CORS
+from sqlalchemy import func
+import tempfile
 
 from flask import Flask, render_template
 
@@ -458,6 +460,16 @@ def gerar_relatorio():
     data_inicio = request.form['dataInicio']
     data_fim = request.form['dataFim']
     conta_bancaria = ContaBancaria.query.filter_by(id=conta).first()
+    
+    try:
+        data_inicio_obj = datetime.strptime(data_inicio, '%Y-%m-%d')
+        data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d')
+
+        if data_inicio_obj > data_fim_obj:
+            return render_template('relatorio.html', erro="A data inicial deve ser menor que a data final.", conta=conta)
+    except ValueError:
+        return render_template('relatorio.html', erro="Formato de data inválido.", conta=conta)
+
 
     cliente = Cliente.query.get(conta_bancaria.cliente_id)
 
@@ -488,19 +500,82 @@ def gerar_relatorio():
     
     # Movimentacoes do relatorio
 
+    data_inicio_filtro = datetime.strptime(data_inicio, '%Y-%m-%d')
+    data_fim_filtro = datetime.strptime(data_fim, '%Y-%m-%d')
+
+    movimentacoes = ( Movimentacao.query.filter_by(conta_id=conta)
+    .filter(Movimentacao.data >= data_inicio_filtro, Movimentacao.data <= data_fim_filtro).all())
+
     relatorio += f"Listagem das Movimentações:\n"
     contador = 1
-    for item in conta_bancaria.movimentacoes:
+    for item in movimentacoes:
+        tipo_item = ""
         data_formatada = item.data.strftime("%m/%d/%Y %H:%M:%S %f")[:-3]  # Formata a data
-        relatorio += f"{contador}. Data: {data_formatada}, Tipo: {item.tipo}, Valor: R$ {item.valor}\n"
+        if (item.tipo == 1):
+            tipo_item = "Depósito"
+        elif (item.tipo == 2):
+            tipo_item = "Saque"
+        elif (item.tipo == 3):
+            tipo_item = "Juros"
+        relatorio += f"{contador}. Data: {data_formatada}, Tipo: {tipo_item}, Valor: R$ {item.valor}\n"
         contador += 1
-    
-    # Nome do arquivo de texto de saída
-    nome_arquivo = "relatorio" + str(datetime.now().strftime("%Y%m%d%H%M%S")) + cliente.nome + ".txt"
-    with open(nome_arquivo, "w") as arquivo:
-        arquivo.write(relatorio)
+    relatorio += f"\n"
 
-    return send_file(nome_arquivo, as_attachment=True, download_name=nome_arquivo)
+    # Rodape do relatorio
+
+    query_depositos = db.session.query(
+        func.count(Movimentacao.id).label("quantidade"),
+        func.sum(Movimentacao.valor).label("total_valor")
+    ).filter(
+        Movimentacao.tipo == 1,  # Supondo que 1 representa depósitos
+        Movimentacao.conta_id == conta
+    ).first()
+
+    quantidade_depositos = query_depositos.quantidade
+    total_valor_depositos = query_depositos.total_valor
+
+    query_saques = db.session.query(
+        func.count(Movimentacao.id).label("quantidade"),
+        func.sum(Movimentacao.valor).label("total_valor")
+    ).filter(
+        Movimentacao.tipo == 2,  # Supondo que 2 representa saques
+        Movimentacao.conta_id == conta
+    ).first()
+
+    quantidade_saques = query_saques.quantidade
+    total_valor_saques = query_saques.total_valor
+
+    query_juros = db.session.query(
+        func.count(Movimentacao.id).label("quantidade"),
+        func.sum(Movimentacao.valor).label("total_valor")
+    ).filter(
+        Movimentacao.tipo == 3,  # Supondo que 3 representa operações de juros
+        Movimentacao.conta_id == conta
+    ).first()
+
+    quantidade_juros = query_juros.quantidade
+    total_valor_juros = query_juros.total_valor
+
+    relatorio += f"Estatísticas da conta:\n"
+    relatorio += f"Quantidade e valor dos depósitos realizados: {quantidade_depositos} depósito(s), R$ {total_valor_depositos}\n"
+    relatorio += f"Quantidade e valor dos saques realizados: {quantidade_saques} saque(s), R$ {total_valor_saques}\n"
+
+    print(conta_bancaria.tipo_conta_id)
+    if (conta_bancaria.tipo_conta_id in [2, 3]):
+        relatorio += f"Quantidade e valor das operações de juros aplicados: {quantidade_juros} operação(ões) de juros, R$ {total_valor_juros}\n\n"
+
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.txt') as arquivo_temporario:
+        nome_arquivo = arquivo_temporario.name
+        arquivo_temporario.write(relatorio.encode('utf-8'))
+
+    # Envia o arquivo como um download
+    return send_file(
+        nome_arquivo,
+        as_attachment=True,
+        download_name='relatorio' + cliente.nome + data_inicio + '-' + data_fim + '.txt',
+        mimetype='text/plain'
+    )
 
 
 if __name__ == '__main__':

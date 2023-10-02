@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Login{% endblock %}
+{% block title %}PyBank | Relatório{% endblock %}
 
 {% block content %}
 
@@ -24,7 +24,7 @@
                             <span id="erro" class="text-danger">{{ erro }}</span>
                         </div>
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Imprimir</button>
+                            <button type="submit" id="botaoImpressao" class="btn btn-primary">Imprimir</button>
                         </div>
                     </form>
                 </div>
@@ -32,5 +32,16 @@
         </div>
     </div>
 </div>
+<script>
+    const botaoSubmit = document.getElementById('botaoImpressao');
+
+        // Adicione um ouvinte de evento ao botão
+    botaoSubmit.addEventListener('click', function(event) {
+        erroSpan = document.getElementById('erro');
+        erroSpan.innerHTML = '';
+    });
+
+</script>
 
 {% endblock %}
+
